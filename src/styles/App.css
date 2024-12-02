@@ -1,0 +1,59 @@
+/* src/styles/App.css */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+  }
+  
+  .App {
+    max-width: 1230px;
+    margin: auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  h1 {
+    text-align: center;
+  }
+  
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  form input,
+  form button {
+    padding: 10px;
+    font-size: 1em;
+  }
+  
+  form button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  form button:hover {
+    background-color: #218838;
+  }
+  
+  /* Tambahkan gaya ini di file CSS Anda */
+#parking-map-container {
+  width: 100%; /* 90% dari lebar layar */
+  height: 100vh; /* 70% dari tinggi layar */
+  margin: 0 auto; /* Pusatkan elemen secara horizontal */
+  border: 1px solid #ccc; /* Opsional: Tambahkan border untuk visualisasi */
+  box-sizing: border-box; /* Pastikan padding termasuk dalam dimensi */
+}
+
+@media screen and (max-width: 768px) {
+  #parking-map-container {
+    width: 95%; /* Lebar lebih besar untuk layar kecil */
+    height: 60vh; /* Sedikit lebih kecil di layar kecil */
+  }
+}
