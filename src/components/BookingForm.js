@@ -14,27 +14,22 @@ const BookingForm = ({ selectedSpot, isOpen, closeModal }) => {
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Menghandle perubahan input form
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Menghandle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Mendapatkan waktu mulai dan konversi durasi ke angka
     const startTime = new Date().toISOString();
     const durationInMinutes = Number(formData.duration);
 
-    // Validasi durasi
     if (isNaN(durationInMinutes) || durationInMinutes <= 0) {
       setMessage("Please enter a valid duration.");
       return;
     }
 
-    setIsSubmitting(true); // Menandakan proses submit sedang berjalan
+    setIsSubmitting(true);
 
     const payload = {
       name: formData.name,
@@ -46,18 +41,16 @@ const BookingForm = ({ selectedSpot, isOpen, closeModal }) => {
 
     try {
       const response = await bookParkingSpot(payload);
-
       if (response.success) {
-        setMessage("Booking successful!");        
-          window.location.reload(); // Refresh halaman setelah modal ditutup
-       
+        setMessage("Booking successful!");
+        setTimeout(() => window.location.reload(), 1500); // Reload setelah pesan berhasil
       } else {
         setMessage("Failed to book the parking spot.");
       }
     } catch (error) {
       setMessage("Error booking the parking spot.");
     } finally {
-      setIsSubmitting(false); // Reset status submit
+      setIsSubmitting(false);
     }
   };
 
@@ -76,7 +69,7 @@ const BookingForm = ({ selectedSpot, isOpen, closeModal }) => {
           marginBottom: "20px",
         }}
       >
-        <h3 style={{ fontSize: "24px", margin: "0" }}>Book Spot: {selectedSpot.spotNumber}</h3>
+        <h3 style={{ fontSize: "24px", margin: "0" }}>Book Spot: {selectedSpot.spot_number}</h3>
         <button
           onClick={closeModal}
           style={{

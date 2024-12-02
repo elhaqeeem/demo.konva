@@ -8,24 +8,21 @@ import Konva from "konva";
 const ParkingMap = ({ onSpotClick }) => {
   const [parkingSpots, setParkingSpots] = useState([]);
   const [canvasSize, setCanvasSize] = useState({
-    width: window.innerWidth * 0.9, // 90% dari lebar layar
-    height: window.innerHeight * 0.7, // 70% dari tinggi layar
+    width: window.innerWidth * 0.9, // 90% of screen width
+    height: window.innerHeight * 0.7, // 70% of screen height
   });
-  const [isModalOpen, setIsModalOpen] = useState(false); // Track modal state
-  const [selectedSpot, setSelectedSpot] = useState(null); // Track selected spot
+  const [isModalOpen, setIsModalOpen] = useState(false); // Modal state
+  const [selectedSpot, setSelectedSpot] = useState(null); // Selected parking spot
+  const [parkingImage, setParkingImage] = useState(null); // Parking image state
+  const [imageWidth, setImageWidth] = useState(0); // Image width
+  const [imageHeight, setImageHeight] = useState(0); // Image height
 
-  const [parkingImage, setParkingImage] = useState(null);
-
-  // Define image size properties
-  const [imageWidth, setImageWidth] = useState(0);
-  const [imageHeight, setImageHeight] = useState(0);
-
-  // Load parking spots from the API
+  // Fetch parking spots from the API
   useEffect(() => {
     const loadSpots = async () => {
       try {
         const spots = await fetchParkingSpots();
-        setParkingSpots(spots || []); // Ensure the array is not empty
+        setParkingSpots(spots || []);
       } catch (error) {
         console.error("Error loading parking spots:", error);
         toast.error("Failed to load parking spots!");
@@ -33,9 +30,10 @@ const ParkingMap = ({ onSpotClick }) => {
     };
     loadSpots();
 
+    // Handle window resize
     const handleResize = () => {
       setCanvasSize({
-        width: window.innerWidth * 1.9,
+        width: window.innerWidth * 0.9,
         height: window.innerHeight * 0.7,
       });
     };
@@ -44,57 +42,55 @@ const ParkingMap = ({ onSpotClick }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Load the parking image and its dimensions
+  // Load the parking map image and its dimensions
   useEffect(() => {
     const img = new window.Image();
-    img.src = "/travel.png"; // Update with the path to your image
+    img.src = "/travel.png"; // Path to your parking map image
     img.onload = () => {
       setParkingImage(img);
-      setImageWidth(img.width); // Dynamically set imageWidth
-      setImageHeight(img.height); // Dynamically set imageHeight
+      setImageWidth(img.width);
+      setImageHeight(img.height);
     };
   }, []);
+
+  // Dynamically adjust canvas size based on container resizing
   useEffect(() => {
     const container = document.getElementById("parking-map-container");
-  
     const resizeObserver = new ResizeObserver(() => {
       setCanvasSize({
         width: container.offsetWidth,
         height: container.offsetHeight,
       });
     });
-  
+
     resizeObserver.observe(container);
-  
-    return () => {
-      resizeObserver.disconnect();
-    };
+    return () => resizeObserver.disconnect();
   }, []);
-  
-  // Spot width and height based on canvas size and image size
+
+  // Calculate spot width and height
   const spotWidth = imageWidth > 0 ? imageWidth / 10 : canvasSize.width / 19;
   const spotHeight = imageHeight > 0 ? imageHeight / 10 : canvasSize.height / 6;
   const laneWidth = canvasSize.width / 19;
   const cols = 9;
 
-  // Handle spot click to either show modal or display a message if occupied
+  // Handle spot click and open booking modal
   const handleSpotClick = (spot) => {
     setSelectedSpot(spot);
     if (spot.is_occupied) {
       toast.error(`Spot ${spot.spot_number} is occupied!`);
     } else {
-      setIsModalOpen(true); // Open modal if the spot is available
+      setIsModalOpen(true);
     }
   };
 
   const closeModal = () => {
-    setIsModalOpen(false); // Close the modal
-    setSelectedSpot(null); // Clear selected spot
+    setIsModalOpen(false);
+    setSelectedSpot(null);
   };
 
-  // Draw the parking map using Konva
+  // Render the parking map using Konva
   useEffect(() => {
-    if (!parkingImage || parkingSpots.length === 0) return; // Wait for image and spots to load
+    if (!parkingImage || parkingSpots.length === 0) return;
 
     const stage = new Konva.Stage({
       container: "parking-map-container",
@@ -105,33 +101,32 @@ const ParkingMap = ({ onSpotClick }) => {
     const layer = new Konva.Layer();
     stage.add(layer);
 
-    // Redraw parking spots when canvas size or parking spots change
     parkingSpots.forEach((spot, index) => {
       const col = index % cols;
       const row = Math.floor(index / cols);
       const x = laneWidth + col * (spotWidth + laneWidth);
       const y = canvasSize.height * 0.15 + row * (spotHeight + laneWidth);
 
-      if (parkingImage) {
-        const image = new Konva.Image({
-          x: x * 1.2,
-          y: y * 1.5, // Slightly adjust y for better positioning
-          width: spotWidth ,
-          height: spotHeight ,
-          image: parkingImage,
-          opacity: spot.is_occupied ? 3 : 0, // Adjust opacity if occupied
-        });
+      // Render the parking spot images
+      const image = new Konva.Image({
+        x: x ,
+        y: y * 1.5,
+        width: spotWidth,
+        height: spotHeight,
+        image: parkingImage,
+        opacity: spot.is_occupied ? 1 : 0, // Adjust opacity if occupied
+      });
 
-        image.on("click", () => handleSpotClick(spot));
-        layer.add(image);
-      }
+      image.on("click", () => handleSpotClick(spot));
+      layer.add(image);
 
+      // Render the parking spot number
       const text = new Konva.Text({
         x: x + spotWidth * 0.1,
         y: y,
         text: spot.spot_number,
         fontSize: Math.min(spotWidth, spotHeight) * 0.3,
-        fontFamily: "roboto",
+        fontFamily: "Roboto",
         fill: "red",
         fontStyle: "bold",
       });
@@ -139,37 +134,36 @@ const ParkingMap = ({ onSpotClick }) => {
       layer.add(text);
     });
 
-    // Draw horizontal dividers dynamically based on the actual number of rows
-    const numRows = Math.ceil(parkingSpots.length / cols); // Total rows based on parking spots and columns
-    for (let row = 1; row < numRows; row++) { // Start from row 1 to skip the top
-      const y = canvasSize.height * 0.14 + row * (spotHeight + laneWidth); // Calculate y dynamically for each row
-      const xStart = laneWidth; // Start position of the line
-      const xEnd = laneWidth + cols * (spotWidth + laneWidth); // End position of the line
+    // Draw horizontal dividers for rows
+    const numRows = Math.ceil(parkingSpots.length / cols);
+    for (let row = 1; row < numRows; row++) {
+      const y = canvasSize.height * 0.14 + row * (spotHeight + laneWidth);
+      const xStart = laneWidth;
+      const xEnd = laneWidth + cols * (spotWidth + laneWidth);
 
       const line = new Konva.Line({
-        points: [xStart, y, xEnd, y], // Line from xStart to xEnd at height y
+        points: [xStart, y, xEnd, y],
         stroke: "#bbb",
         strokeWidth: 2,
-        dash: [5, 5], // Dashed style
+        dash: [5, 5],
       });
 
-      layer.add(line); // Add line to the layer
+      layer.add(line);
     }
 
-
-    // Draw vertical dividers
+    // Draw vertical dividers for columns
     parkingSpots.forEach((_, index) => {
       const col = index % cols;
       const x = laneWidth + (col + 1) * (spotWidth + laneWidth);
       const yStart = canvasSize.height * 0.15;
       const yEnd = canvasSize.height * 0.15 + (Math.ceil(parkingSpots.length / cols) * (spotHeight + laneWidth));
 
-      if (col !== cols - 1) { // Skip last column to avoid adding a line at the far right
+      if (col !== cols - 1) {
         const line = new Konva.Line({
           points: [x, yStart, x, yEnd],
           stroke: "#bbb",
           strokeWidth: 2,
-          dash: [5, 5], // Dashed line style
+          dash: [5, 5],
         });
         layer.add(line);
       }
@@ -177,7 +171,6 @@ const ParkingMap = ({ onSpotClick }) => {
 
     layer.batchDraw();
 
-    // Cleanup Konva when component unmounts
     return () => {
       stage.destroy();
     };
@@ -185,8 +178,8 @@ const ParkingMap = ({ onSpotClick }) => {
 
   return (
     <>
+    
       <div id="parking-map-container" />
-  
       <ToastContainer
         position="top-center"
         autoClose={500}
@@ -200,7 +193,6 @@ const ParkingMap = ({ onSpotClick }) => {
         theme="dark"
       />
   
-      {/* Modal booking */}
       {selectedSpot && (
         <BookingForm
           selectedSpot={selectedSpot}
@@ -210,7 +202,6 @@ const ParkingMap = ({ onSpotClick }) => {
       )}
     </>
   );
-  
 };
 
 export default ParkingMap;
